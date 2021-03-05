@@ -7,7 +7,7 @@ contract Lottery {
     // array of players that are taking part in the lottery
     address[] public players;
     
-    constructor() public {
+    function Lottery() public {
         manager = msg.sender;
     }
     
@@ -15,7 +15,7 @@ contract Lottery {
     function enter() public payable {
         // ether is keyword that follows the fixedpoint number to
         // specify the number in ether
-        require(msg.value > .01ther, "Not enough money to enter the lottery!");
+        require(msg.value > .01 ether);
         players.push(msg.sender);
     }
     
@@ -34,7 +34,7 @@ contract Lottery {
     }
     
     modifier onlyManager() {
-        require(manager == msg.sender, "Only the manager can use this function!");
+        require(manager == msg.sender);
         // the underscore takes all the function's code and adds it in place of the 
         // underscore. Classic method of DRY.
         _;
