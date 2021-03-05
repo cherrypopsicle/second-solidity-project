@@ -15,7 +15,7 @@ contract Lottery {
     function enter() public payable {
         // ether is keyword that follows the fixedpoint number to
         // specify the number in ether
-        require(msg.value > .01 ether, "Not enough money to enter the lottery!");
+        require(msg.value > .01ther, "Not enough money to enter the lottery!");
         players.push(msg.sender);
     }
     
