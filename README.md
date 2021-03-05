@@ -1,0 +1,2 @@
+# second-solidity-project
+LotteryContract!
