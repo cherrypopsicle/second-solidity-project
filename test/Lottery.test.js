@@ -1,4 +1,5 @@
 // checks if a given value is true or not. If false, terminate program.
+const { AssertionError } = require("assert");
 const assert = require("assert");
 // required for testing solidity
 const ganache = require("ganache-cli");
@@ -57,6 +58,98 @@ describe("Inbox contract", () => {
 
     // We do this by asserting if an address exists in the
     // inbox contract.
+
+    // check for existence of lottery.options.address
     assert.ok(lottery.options.address);
+  });
+  it("allows one account to enter", async () => {
+    // send({}) with an object can specify the msg.sender and
+    // the msg.value through the from and value respectively.
+    await lottery.methods.enter().send({
+      from: accounts[0],
+      value: web3.utils.toWei("0.02", "ether"),
+    });
+
+    const players = await lottery.methods
+      .returnPlayers()
+      .call({ from: accounts[0] });
+
+    assert.equal(accounts[0], players[0]);
+    assert.equal(1, players.length);
+  });
+  it("allows multiple accounts to enter", async () => {
+    // send({}) with an object can specify the msg.sender and
+    // the msg.value through the from and value respectively.
+    await lottery.methods.enter().send({
+      from: accounts[0],
+      value: web3.utils.toWei("0.02", "ether"),
+    });
+    await lottery.methods.enter().send({
+      from: accounts[1],
+      value: web3.utils.toWei("0.02", "ether"),
+    });
+    await lottery.methods.enter().send({
+      from: accounts[2],
+      value: web3.utils.toWei("0.02", "ether"),
+    });
+
+    const players = await lottery.methods
+      .returnPlayers()
+      .call({ from: accounts[0] });
+
+    assert.equal(accounts[0], players[0]);
+    assert.equal(accounts[1], players[1]);
+    assert.equal(accounts[2], players[2]);
+    assert.equal(3, players.length);
+  });
+  // we use try-catch to handle expected errors in our contract
+  it("requires a minimum amount of ether", async () => {
+    try {
+      await lottery.methods.enter().send({
+        from: accounts[0],
+        value: web3.utils.toWei("0.001", "ether"),
+      });
+      // assert that it's false
+      assert(false);
+    } catch (err) {
+      // the test will pass because we successfully caught
+      // the err object and asserted that it's true
+      // (the error).
+      assert(err);
+    }
+  });
+  // check if any other account can pick a winner
+  it("only manager can pick winner", async () => {
+    try {
+      await lottery.methods.pickWinner().send({
+        from: accounts[1],
+      });
+      assert(false);
+    } catch (err) {
+      assert(err);
+    }
+  });
+  // check if we can pick the winner and send the money
+  it("sends money to the winner and resets the players array", async () => {
+    await lottery.methods.enter().send({
+      from: accounts[0],
+      value: web3.utils.toWei("2", "ether"),
+    });
+
+    // check balance in accounts[0] (should be < 2 ether)
+    const initialBalance = await web3.eth.getBalance(accounts[0]);
+    // pick winner
+    await lottery.methods.pickWinner().send({
+      from: accounts[0],
+    });
+
+    // check balance in accounts[0] again (should be +2 ether)
+    const finalBalance = await web3.eth.getBalance(accounts[0]);
+    // check difference between finalBalance and initialBalance
+    const difference = finalBalance - initialBalance;
+    // assert that difference is greater than 1.8 ether. we say
+    // 1.8 as we leave a margin of error due to gas costs.
+    assert(difference > web3.utils.toWei("1.8", "ether"));
+    assert.equal(players.length, 0);
   });
 });
